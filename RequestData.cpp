@@ -5,6 +5,7 @@
 #include<sys/socket.h>
 #include<sys/mman.h>
 #include "RequestData.h"
+#include<assert.h>
 
 	static std::unordered_map<std::string, std::string> mime_map = 
 	{
@@ -225,6 +226,7 @@ int Http_c::work()
 	HTTP_CODE ret = request_read();
 	if(ret == BAD_REQUEST)
 	{
+		printf("parse failes\n");
 		return CLOSE;
 	}
 	else if(ret == GET_REQUEST)
@@ -232,6 +234,7 @@ int Http_c::work()
 		response = do_request();
 		if(response == BAD_REQUEST)
 		{
+			printf("do failed\n");
 			return CLOSE;
 		}
 	}
@@ -241,7 +244,11 @@ int Http_c::work()
 		reset();
 		return keep_alive;
 	}
-	else return CLOSE;
+	else 
+	{
+		reset();
+		return CLOSE;
+	}
 }
 
 Http_c::HTTP_CODE Http_c::do_request()
@@ -263,8 +270,9 @@ Http_c::HTTP_CODE Http_c::do_request()
 	if(stat(file, &filestat) < 0)
 	{
 		sprintf(w_buf+write_idx, "%s", "404 Not Found\r\n");
-		write_idx += 17;
+		write_idx += 15;
 		filepath = std::string(basepath) + "/page/404.html";
+		assert(stat(filepath.c_str(),&filestat) >= 0);
 		return NO_RESOURCE;
 	}
 
@@ -304,6 +312,7 @@ bool Http_c::send_response()
 	if( fd < 0 )
 	{
 		sprintf(w_buf+write_idx, "Content-length: %d\r\n\r\n%s", strlen(internal_error), internal_error);
+		send(sockfd, w_buf, BUFFERSIZE, 0);
 		return false;
 	}
 	void* m_file = mmap(NULL, filestat.st_size, PROT_READ, MAP_PRIVATE, fd, 0); /*忘记咋用了，看书*/
@@ -316,10 +325,14 @@ bool Http_c::send_response()
 
 	if(send(sockfd, w_buf, BUFFERSIZE, 0) < 0)
 	{
+		printf("send failed!!\n");
+		reset();
 		return false;
 	}
 	if(send(sockfd, m_file, filestat.st_size, 0)< 0)
 	{
+		reset();
+		printf("seng page failed!!\n");
 		return false;
 	}
 	return true;

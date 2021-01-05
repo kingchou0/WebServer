@@ -1,5 +1,6 @@
 #include "RequestData.h"
 #include "my_epoll.h"
+#include "ThreadPool.h"
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<string.h>
@@ -40,7 +41,7 @@ int socket_bind_listen(struct sockaddr_in* address, char* arg_1, char* arg_2)
 
 int main(int argc, char** arg)
 {
-	if(argc < 3)
+	if(argc < 4)
 	{
 		printf("need ip and port!!");
 		return 0;
@@ -48,9 +49,16 @@ int main(int argc, char** arg)
 
 
 	struct sockaddr_in address;
-	int listenfd = socket_bind_listen(&address, arg[1], arg[2]);
+	int listenfd = socket_bind_listen(&address, arg[2], arg[3]);
 
 	std::unordered_map<int, Http_c*> http_map;
+
+	int t_num = atoi(arg[1]);
+	if(t_num > 20)
+	{
+		printf("too much threads\n");
+		return 0;
+	}
 
 	my_epoll server(30);
 
@@ -59,6 +67,8 @@ int main(int argc, char** arg)
 		perror("epoll_add fd error\n");
 		return 1;
 	}
+
+	Threadpool<Http_c> pool(5);
 
 	while(true)
 	{
@@ -94,18 +104,7 @@ int main(int argc, char** arg)
 			else if(server[i].events & EPOLLIN)
 			{
 				int sockfd = server[i].data.fd;
-				printf("one ask\n");
-				if(!http_map[sockfd]->work())
-				{
-
-					printf("bad ask\n");
-					delete http_map[sockfd];
-					http_map.erase(sockfd);
-					server.my_epoll_del(sockfd);
-					close(sockfd);
-				}
-				printf("success answear\n");
-
+				pool.pushback(http_map[sockfd]);
 			}
 		}
 	}

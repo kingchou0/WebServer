@@ -1,109 +1,104 @@
-#ifndef THREADPOOL
-#define	THREADPOOL
-#include<queue>
-#include<assert.h>
-#include<stdio.h>
-#include"RequestData.h"
+#ifndef Httpserver__
+#define	Httpserver__
 
+#include<signal.h>
+#include<map>
+#include<vector>
+#include<assert.h>
+#include<errno.h>
+#include<utility>
+#include<memory>
+#include<stdio.h>
+#include<sys/eventfd.h>
+#include<functional>
+#include<unistd.h>
+#include"RequestData.h"
+#include"my_epoll.h"
 #include"Mutexlock.h"
 
-#define MAX_QUEUE_SIZE 1000
 
-template <typename T>
-class Threadpool
+//typedef std::vector<struct epoll_event> event_list;
+//typedef std::vector<int> fd_list;
+
+typedef std::shared_ptr<Http_c> connection_ptr;
+typedef std::function<void(connection_ptr)> cbfunction;
+typedef std::function<void(int)> fdcbfunction;
+typedef std::function<void()> Func;
+
+class Loop
 {
 public:
-	static void* work(void*);
-	Threadpool(int);
-	T* dequeue();
-	void pushback(T* quest);
-	void run();
-	~Threadpool();
+	typedef std::weak_ptr<Http_c> connection_ptr;
+	typedef std::map<int, connection_ptr> conn_map;
+	typedef std::function<void(Func)> FFunc;
+	Loop();
+	~Loop();
+	void run(pthread_t*);
+	void work();
+	void append(int, connection_ptr);
+	void set_remove(const fdcbfunction&);
+
+	int wakeupfd;
+	void set_run_in_main(const FFunc& foo){runInmain = foo;}
+	//void focus(connection_ptr);
+	//void set_read(cbfunction);
+	//void set_write(cbfunction);
 private:
 
-	void worker();
+	
 
-	bool m_stop;
-	std::queue<T*> q;
-	Mutexlock mutex;
-	Condition cond;
-	pthread_t* p_array;
+	pthread_t* td;
+
+	my_epoll epoll;
+	
+	FFunc runInmain;
+	
+	bool stop;
+	
+	conn_map http_map;
+	
+	void handle_event(int, __uint32_t);
+	
+	fdcbfunction remove;
+
+
+
+	//cbfunction handle_write;
 };
 
-template <typename T>
-void* Threadpool<T>::work(void* arg)
+
+class Httpserver
 {
-	auto elem = static_cast<Threadpool<T>*>(arg);
-	elem->run();
-	return elem;
-}
+public:
+	typedef std::vector<Loop> thread;
+	typedef std::shared_ptr<Http_c> connection_ptr;
+	typedef std::map<int, connection_ptr> conn_map;
+	
+public:
+	Httpserver(int);
+	~Httpserver(){}
+	void append(int);
+	int conn_num();
+	std::vector<Func> mainqueue;
+	void IoLoop();
+private:
+	Mutexlock mainlooplock;
+	int Threadnums;
+	int robin;
+	thread threads;
+	pthread_t* p_thread;
+	conn_map http_map; 
+
+	void wakeup(int);
+	void addToIoloop(const Func&);
+	void removeconn(int);
+	void handle_read(connection_ptr);
 
 
+};
 
-template <typename T>
-T* Threadpool<T>::dequeue()
-{
-	MutexlockGuard lock(mutex);
-	while(q.empty())
-	{
-		cond.wait();
-	}
-	assert(!q.empty());
-	T* ret = q.front();
-	q.pop();
-	return ret;
-}
-
-
-template <typename T>
-void Threadpool<T>::run()
-{
-	while(!m_stop)
-	{
-		T* quest = dequeue();
-		if(!quest->work())
-		{
-			printf("fucking wrong!!!\n");
-		}
-	}
-}
-
-
-
-template <typename T>
-Threadpool<T>::Threadpool(int num):cond(mutex), m_stop(false)
-{
-	p_array = new pthread_t[num];
-
-	for(int i(0); i < num; ++i)
-	{
-		pthread_create(&p_array[i], NULL, work, this);
-		assert(pthread_detach(p_array[i]) == 0);
-	}
-}
-
-
-
-template <typename T>
-Threadpool<T>::~Threadpool()
-{
-	delete [] p_array;
-	m_stop = true;
-}
-
-template <typename T>
-void Threadpool<T>::pushback(T* quest)
-{
-	MutexlockGuard lock(mutex);
-	if(q.size() > MAX_QUEUE_SIZE)
-	{
-		printf("There is too much quest in queue!!\n");
-		return;
-	}
-	q.push(quest);
-	cond.notify();
-}
 
 
 #endif
 
+//还得写连接分配

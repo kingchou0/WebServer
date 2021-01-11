@@ -32,6 +32,8 @@
 	};
 
 
+
+
 static const char* basepath = "/home/re/codes/myweb_1.0";
 
 void Http_c::setnonblocking(int fd)
@@ -47,11 +49,14 @@ Http_c::Http_c(int fd)
 	setnonblocking(fd);
 	keep_alive = CLOSE;
 	check_idx = read_idx = write_idx = 0;
+	need_write = false;
 	state = P_REQUEST;	
 	mime_type = "default";
 }
 
-Http_c::~Http_c(){}
+Http_c::~Http_c(){close(sockfd);
+	assert(m_file == NULL);
+}
 
 
 
@@ -266,6 +271,10 @@ Http_c::HTTP_CODE Http_c::do_request()
 	{
 		keep_alive = KEEP_ALIVE;
 	}
+	else
+	{
+		keep_alive = CLOSE;
+	}
 
 	if(stat(file, &filestat) < 0)
 	{
@@ -315,7 +324,7 @@ bool Http_c::send_response()
 		send(sockfd, w_buf, BUFFERSIZE, 0);
 		return false;
 	}
-	void* m_file = mmap(NULL, filestat.st_size, PROT_READ, MAP_PRIVATE, fd, 0); /*忘记咋用了，看书*/
+	m_file = mmap(NULL, filestat.st_size, PROT_READ, MAP_PRIVATE, fd, 0); /*忘记咋用了，看书*/
 	close(fd);
 	sprintf(w_buf + write_idx, "Server: KINGCHOU's WebServer\r\n");
 	write_idx += 30;
@@ -335,6 +344,7 @@ bool Http_c::send_response()
 		printf("seng page failed!!\n");
 		return false;
 	}
+
 	return true;
 }
 
@@ -346,4 +356,11 @@ Http_c::HTTP_CODE Http_c::parse_body()
 void Http_c::reset()
 {
 	read_idx = write_idx = check_idx = 0;
+	headers.clear();
+	if(munmap(m_file, filestat.st_size) < 0)
+	{
+		perror("munmap failed\n");
+	}
+	m_file = NULL;
+	memset(&filestat, 0, sizeof(filestat));
 }

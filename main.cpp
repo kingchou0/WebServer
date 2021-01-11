@@ -51,7 +51,7 @@ int main(int argc, char** arg)
 	struct sockaddr_in address;
 	int listenfd = socket_bind_listen(&address, arg[2], arg[3]);
 
-	std::unordered_map<int, Http_c*> http_map;
+	//std::unordered_map<int, Http_c*> http_map;
 
 	int t_num = atoi(arg[1]);
 	if(t_num > 20)
@@ -60,7 +60,7 @@ int main(int argc, char** arg)
 		return 0;
 	}
 
-	my_epoll server(30);
+	my_epoll server(300);
 
 	if(server.my_epoll_add(listenfd) < 0)
 	{
@@ -68,7 +68,7 @@ int main(int argc, char** arg)
 		return 1;
 	}
 
-	Threadpool<Http_c> pool(5);
+	Httpserver httpserver(8);
 
 	while(true)
 	{
@@ -87,7 +87,7 @@ int main(int argc, char** arg)
 					continue;
 				}
 
-				if(http_map.size() >= MAX_CONECT_SIZE)
+				if(httpserver.conn_num() >= MAX_CONECT_SIZE)
 				{
 					std::string info = "server busy!!\n";
 					send(confd, info.c_str(), sizeof(info.c_str()), 0);
@@ -96,21 +96,16 @@ int main(int argc, char** arg)
 				}
 				else
 				{
-					http_map[confd] = new Http_c(confd);
-					server.my_epoll_add(confd);
+					httpserver.append(confd);
 					printf("here comes a new connection\n");
 				}
 			}
-			else if(server[i].events & EPOLLIN)
+			else
 			{
-				int sockfd = server[i].data.fd;
-				pool.pushback(http_map[sockfd]);
+				throw("runtime error!");
 			}
 		}
-	}
-	for(auto it = http_map.begin(); it != http_map.end(); ++it)
-	{
-		delete it->second;
+		httpserver.IoLoop();
 	}
 
 }

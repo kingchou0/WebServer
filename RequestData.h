@@ -15,6 +15,9 @@
 #include<string>
 #include<iterator>
 
+
+
+
 class Http_c
 {
 public:
@@ -51,6 +54,7 @@ public:
 	~Http_c();
 
 	int work();
+	bool need_write;
 private:
 
 
@@ -89,6 +93,7 @@ private:
 	HTTP_CODE parse_body();
 
 	HTTP_CODE response;
+	void* m_file;
 
 
 };

@@ -97,7 +97,7 @@ int main(int argc, char** arg)
 				else
 				{
 					httpserver.append(confd);
-					printf("here comes a new connection\n");
+					//printf("here comes a new connection\n");
 				}
 			}
 			else

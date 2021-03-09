@@ -111,6 +111,7 @@ void* start(void* item)
 
 void Loop::append(int fd, Loop::connection_ptr ptr)
 {
+	MutexlockGuard  lock(cloop_lock);
 	http_map[fd] = ptr;
 	if(epoll.my_epoll_add(fd) < 0)
 	{
@@ -132,10 +133,12 @@ void Loop::run(pthread_t* t_id)
 
 void Loop::handle_event(int fd, __uint32_t event)
 {
+	MutexlockGuard  lock(cloop_lock);
 	assert(http_map.find(fd) != http_map.end());
 	auto connection = http_map[fd].lock();
 	if(!connection)
 	{
+		MutexlockGuard  lock(cloop_lock);
 		http_map.erase(fd);
 		epoll.my_epoll_del(fd);
 	}

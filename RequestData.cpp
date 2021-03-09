@@ -55,7 +55,10 @@ Http_c::Http_c(int fd)
 }
 
 Http_c::~Http_c(){close(sockfd);
-	assert(m_file == NULL);
+	if(m_file == NULL)
+	{
+		assert(munmap(m_file, filestat.st_size)<0);
+	}
 }
 
 
@@ -251,7 +254,6 @@ int Http_c::work()
 	}
 	else 
 	{
-		reset();
 		return CLOSE;
 	}
 }
@@ -326,6 +328,11 @@ bool Http_c::send_response()
 	}
 	m_file = mmap(NULL, filestat.st_size, PROT_READ, MAP_PRIVATE, fd, 0); /*忘记咋用了，看书*/
 	close(fd);
+	if(m_file == NULL)
+	{
+		printf("mmap failed");
+		return false;
+	}
 	sprintf(w_buf + write_idx, "Server: KINGCHOU's WebServer\r\n");
 	write_idx += 30;
 	sprintf(w_buf + write_idx, "Content-type: %s\r\n", mime_map[mime_type].c_str());

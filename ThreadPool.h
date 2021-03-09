@@ -61,6 +61,8 @@ private:
 	
 	fdcbfunction remove;
 
+	Mutexlock cloop_lock;
+
 
 
 	//cbfunction handle_write;

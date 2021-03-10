@@ -55,7 +55,7 @@ Http_c::Http_c(int fd)
 }
 
 Http_c::~Http_c(){close(sockfd);
-	if(m_file == NULL)
+	if(m_file != NULL)
 	{
 		assert(munmap(m_file, filestat.st_size)<0);
 	}

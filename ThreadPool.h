@@ -15,6 +15,7 @@
 #include"RequestData.h"
 #include"my_epoll.h"
 #include"Mutexlock.h"
+#include"TimerQueue.h"
 
 
 //typedef std::vector<struct epoll_event> event_list;
@@ -40,6 +41,7 @@ public:
 
 	int wakeupfd;
 	void set_run_in_main(const FFunc& foo){runInmain = foo;}
+	void set_set_time(const fdcbfunction& foo){set_time = foo;}
 	//void focus(connection_ptr);
 	//void set_read(cbfunction);
 	//void set_write(cbfunction);
@@ -63,6 +65,7 @@ private:
 
 	Mutexlock cloop_lock;
 
+	fdcbfunction set_time;
 
 
 	//cbfunction handle_write;
@@ -74,8 +77,9 @@ class Httpserver
 public:
 	typedef std::vector<Loop> thread;
 	typedef std::shared_ptr<Http_c> connection_ptr;
+	typedef std::weak_ptr<Http_c> con_w_ptr;
 	typedef std::map<int, connection_ptr> conn_map;
-	
+	typedef std::map<int, con_w_ptr> time_map;
 public:
 	Httpserver(int);
 	~Httpserver(){}
@@ -83,19 +87,24 @@ public:
 	int conn_num();
 	std::vector<Func> mainqueue;
 	void IoLoop();
+	void handle_expired();
 private:
 	Mutexlock mainlooplock;
+	Mutexlock tqlock;
 	int Threadnums;
 	int robin;
 	thread threads;
 	pthread_t* p_thread;
 	conn_map http_map; 
+	time_map http_map_w;
 
 	void wakeup(int);
 	void addToIoloop(const Func&);
 	void removeconn(int);
 	void handle_read(connection_ptr);
+	void set_time(int);
 
+	TimerQueue tq;
 
 };
 
@@ -104,3 +113,4 @@ private:
 #endif
 
 //还得写连接分配
+

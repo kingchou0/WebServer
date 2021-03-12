@@ -106,6 +106,7 @@ int main(int argc, char** arg)
 			}
 		}
 		httpserver.IoLoop();
+		httpserver.handle_expired();
 	}
 
 }

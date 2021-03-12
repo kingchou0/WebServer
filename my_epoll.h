@@ -3,7 +3,7 @@
 #include<sys/epoll.h>
 #include<cstdlib>
 #include<fcntl.h>
-
+#include<errno.h>
 #define MAX_EVENT_NUMBER
 
 void setnonblocking(int);

@@ -31,6 +31,7 @@ Httpserver::Httpserver(int num):Threadnums(num), threads(thread(Threadnums)), p_
 		//threads[i].set_read(std::bind(Httpserver::handle_read, this, std::placeholders::_1));
 		threads[i].set_remove(std::bind(&Httpserver::removeconn, this, std::placeholders::_1));
 		threads[i].set_run_in_main(std::bind(&Httpserver::addToIoloop, this, std::placeholders::_1));
+		threads[i].set_set_time(std::bind(&Httpserver::set_time, this, std::placeholders::_1));
 		//threads[i].set_write()
 		threads[i].run(&p_thread[i]);
 	}
@@ -55,7 +56,7 @@ int Httpserver::conn_num()
 
 void Httpserver::removeconn(int fd)
 {
-	if(http_map[fd])
+	if(http_map.find(fd) != http_map.end())
 	{
 		http_map.erase(fd);
 	}
@@ -117,6 +118,7 @@ void Loop::append(int fd, Loop::connection_ptr ptr)
 	{
 		perror("epoll failed\n");
 	}
+
 }
 
 void Loop::set_remove(const fdcbfunction &cb)
@@ -138,7 +140,7 @@ void Loop::handle_event(int fd, __uint32_t event)
 	auto connection = http_map[fd].lock();
 	if(!connection)
 	{
-		MutexlockGuard  lock(cloop_lock);
+		//MutexlockGuard  lock(cloop_lock);
 		http_map.erase(fd);
 		epoll.my_epoll_del(fd);
 	}
@@ -148,6 +150,8 @@ void Loop::handle_event(int fd, __uint32_t event)
 		if(connection->work())
 		{
 			//添加30s的定时处理
+			//printf(" set timer to %d\n", fd);
+			runInmain(std::bind(set_time, fd));
 			return;
 		}
 		else if(connection->need_write)
@@ -191,5 +195,33 @@ void Loop::work()
 			else handle_event(sockfd, epoll[i].events);
 		}
 	}
+}
+
+void Httpserver::set_time(int fd)
+{
+	connection_ptr ptr = nullptr;
+	if(http_map[fd] != nullptr)
+	{
+		ptr = std::move(http_map[fd]);
+		http_map_w[fd] = ptr;
+		http_map.erase(fd);
+	}
+	else if(http_map_w.find(fd) != http_map_w.end())
+	{
+		ptr = http_map_w[fd].lock();
+	}
+	if(ptr == nullptr)
+	{
+		http_map_w.erase(fd);
+		return ;
+	}
+	MutexlockGuard lock(tqlock);
+	tq.insert(30, std::move(ptr));
+}
+
+void Httpserver::handle_expired()
+{
+	MutexlockGuard lock(tqlock);
+	tq.handle_expired();
 }
 

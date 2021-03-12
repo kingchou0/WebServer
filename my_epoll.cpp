@@ -1,6 +1,6 @@
 #include "my_epoll.h"
 #include<assert.h>
-
+#include<stdio.h>
 
 
 void setnonblocking(int fd)
@@ -23,7 +23,13 @@ my_epoll::~my_epoll(){delete [] events;}
 int my_epoll::my_epoll_wait()
 {
 	int ret = epoll_wait(epollfd, events, max_num, -1);
-	assert(ret >= 0);
+	if(ret == -1)
+	{
+		if(errno != EINTR)
+		{
+			perror("epoll_wait\n");
+		}
+	}
 	return ret;
 }
 
@@ -49,7 +55,13 @@ int my_epoll::my_epoll_del(int fd, __uint32_t events)
 	event.data.fd = fd;
 	event.events = events;
 	int ret = epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, &event);
-	assert(ret >= 0);
+	if(ret < 0)
+	{
+		if(errno != ENOENT)
+		{
+			perror("epoll_delete");
+		}
+	}
 	return ret;
 }
 

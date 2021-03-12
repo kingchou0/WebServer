@@ -180,6 +180,33 @@ ThreadPool.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserver.dir/build.make CMakeFiles/webserver.dir/ThreadPool.cpp.s
 .PHONY : ThreadPool.cpp.s
 
+TimerQueue.o: TimerQueue.cpp.o
+
+.PHONY : TimerQueue.o
+
+# target to build an object file
+TimerQueue.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserver.dir/build.make CMakeFiles/webserver.dir/TimerQueue.cpp.o
+.PHONY : TimerQueue.cpp.o
+
+TimerQueue.i: TimerQueue.cpp.i
+
+.PHONY : TimerQueue.i
+
+# target to preprocess a source file
+TimerQueue.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserver.dir/build.make CMakeFiles/webserver.dir/TimerQueue.cpp.i
+.PHONY : TimerQueue.cpp.i
+
+TimerQueue.s: TimerQueue.cpp.s
+
+.PHONY : TimerQueue.s
+
+# target to generate assembly for a file
+TimerQueue.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserver.dir/build.make CMakeFiles/webserver.dir/TimerQueue.cpp.s
+.PHONY : TimerQueue.cpp.s
+
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -249,6 +276,9 @@ help:
 	@echo "... ThreadPool.o"
 	@echo "... ThreadPool.i"
 	@echo "... ThreadPool.s"
+	@echo "... TimerQueue.o"
+	@echo "... TimerQueue.i"
+	@echo "... TimerQueue.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

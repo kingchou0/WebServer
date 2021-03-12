@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.6)
 
 project(WebServer)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FALGS -Wall -std=c++11 -lpthread)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FALGS -Wall -std=c++14 -lpthread)
 
 link_libraries(pthread)
 
@@ -14,6 +14,7 @@ set(SOURCE_FILES
 	ThreadPool.cpp
 	RequestData.cpp
 	my_epoll.cpp
+	TimerQueue.cpp
 )
 
 add_executable(webserver ${SOURCE_FILES})

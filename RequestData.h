@@ -52,7 +52,7 @@ public:
 
 	Http_c(int fd);
 	~Http_c();
-
+	int sockfd;
 	int work();
 	bool need_write;
 private:
@@ -70,7 +70,7 @@ private:
 	
 
 	bool keep_alive;
-	int sockfd;
+
 	char r_buf[BUFFERSIZE];
 	char w_buf[BUFFERSIZE];
 	

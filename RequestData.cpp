@@ -34,7 +34,7 @@
 
 
 
-static const char* basepath = "/home/re/codes/myweb_1.0";
+static const char* basepath = "/mnt/hgfs/we/myweb_1.0";
 
 void Http_c::setnonblocking(int fd)
 {
@@ -54,8 +54,10 @@ Http_c::Http_c(int fd)
 	mime_type = "default";
 }
 
-Http_c::~Http_c(){close(sockfd);
-	if(m_file == NULL)
+Http_c::~Http_c(){
+	//printf("release %d\n", sockfd);
+	close(sockfd);
+	if(m_file != NULL)
 	{
 		assert(munmap(m_file, filestat.st_size)<0);
 	}
@@ -348,7 +350,7 @@ bool Http_c::send_response()
 	if(send(sockfd, m_file, filestat.st_size, 0)< 0)
 	{
 		reset();
-		printf("seng page failed!!\n");
+		printf("send page failed!!\n");
 		return false;
 	}
 

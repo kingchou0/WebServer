@@ -25,9 +25,10 @@ one loop per thread + thread pool. 通过epoll实现多路复用。以有限状�
 
 参照Muduo的思路以及RAII思想封装了pthread_mutex_t对象。
 
+通过设置定时器来处理超时连接。
 
 ####计划
 * 性能优化
-* 添加定时器处理超时连接
+* 添加定时器处理超时连接（已完成）
 * 添加异步日志
 * 代码结构优化

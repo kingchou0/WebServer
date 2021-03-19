@@ -328,7 +328,7 @@ bool Http_c::send_response()
 		send(sockfd, w_buf, BUFFERSIZE, 0);
 		return false;
 	}
-	m_file = mmap(NULL, filestat.st_size, PROT_READ, MAP_PRIVATE, fd, 0); /*忘记咋用了，看书*/
+	m_file = mmap(NULL, filestat.st_size, PROT_READ, MAP_PRIVATE, fd, 0); 
 	close(fd);
 	if(m_file == NULL)
 	{
